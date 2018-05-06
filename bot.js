@@ -47,7 +47,7 @@ class tradingBot extends EventEmitter {
             if (err) {
               return reject(err)
             }
-            return resolve(status)
+            return resolve(true)
           })
         }
       })
