@@ -54,6 +54,18 @@ class tradingBot extends EventEmitter {
     })
   }
 
+  declineOffer(offer) {
+    return new Promise((resolve, reject) => {
+      offer.decline(err => {
+        if (err) {
+          return reject(err)
+        } else {
+          return resolve(true)
+        }
+      })
+    })
+  }
+
   evaluateOffer(offer) {
     let receiving = offer.itemsToReceive.map(item => item.market_hash_name)
     let giving = offer.itemsToGive.map(item => item.market_hash_name)
