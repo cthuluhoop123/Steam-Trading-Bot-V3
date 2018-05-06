@@ -39,7 +39,18 @@ class tradingBot extends EventEmitter {
 
   acceptOffer(offer) {
     return new Promise((resolve, reject) => {
-      
+      offer.accept((err, status) => {
+        if (err) {
+          return reject(err)
+        } else {
+          this.community.acceptConfirmationForObject(this.logOnOptions.identitySecret, offer.id, err => {
+            if (err) {
+              return reject(err)
+            }
+            return resolve(status)
+          })
+        }
+      })
     })
   }
 
@@ -114,7 +125,7 @@ class tradingBot extends EventEmitter {
   }
 
   startTrading() {
-    if (!this.client.loggedOn) return reject('Client must be logged on.')
+    if (!this.client.loggedOn) return console.log('Client must be logged on.')
     this.manager.on('newOffer', async offer => {
       this.evaluateOffer(offer)
     })
