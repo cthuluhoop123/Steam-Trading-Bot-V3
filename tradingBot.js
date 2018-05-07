@@ -25,6 +25,9 @@ class tradingBot extends EventEmitter {
     this._clientEventHandler = new clientEventHandler(this, this.client)
   }
 
+  _startTradingCallback(offer) {
+    this.evaluateOffer(offer)
+  }
   _cacheInventory() {
     return new Promise((resolve, reject) => {
       this.manager.getInventoryContents(440, 2, true, (err, inventory) => {
@@ -89,7 +92,7 @@ class tradingBot extends EventEmitter {
   evaluateStock(offer) {
     //falsy if an item is overstocked
     let receiving = offer.itemsToReceive.map(item => item.market_hash_name)
-    
+
     for (let item of receiving) {
       let amountOfItemOffered = receiving.reduce((accumulator, currentValue) => {
         if (currentValue == item) {
@@ -115,7 +118,7 @@ class tradingBot extends EventEmitter {
         this.community.on('sessionExpired', () => {
           this.client.webLogOn()
         })
-        
+
         this.manager.setCookies(cookies, (err) => {
           if (err) {
             return reject(err)
@@ -137,17 +140,16 @@ class tradingBot extends EventEmitter {
   }
 
   startTrading() {
-    if (!this.client.loggedOn) return console.log('Client must be logged on.')
-    this.manager.on('newOffer', async offer => {
-      this.evaluateOffer(offer)
-    })
+    if (!this.client.loggedOn) {
+      console.log('Client must be logged on.')
+      return
+    }
+    this.manager.on('newOffer', this._startTradingCallback)
     this.emit('debug', 'Started Trading')
   }
 
   stopTrading() {
-    this.manager.removeListener('newOffer', async offer => {
-      this.evaluateOffer(offer)
-    })
+    this.manager.removeListener('newOffer', this._startTradingCallback)
     this.emit('debug', 'Stopped Trading')
   }
 }

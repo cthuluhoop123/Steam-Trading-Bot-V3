@@ -6,7 +6,7 @@ const logOnOptions = {
   sharedSecret: config.sharedSecret
 }
 
-const tradingbot = require('./bot.js')
+const tradingbot = require('./tradingBot.js')
 let something = new tradingbot(logOnOptions)
 
 something.on("loggedOn", () => {
