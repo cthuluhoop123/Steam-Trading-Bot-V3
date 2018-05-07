@@ -1,1 +1,23 @@
-{}
+{
+  "Refined Metal": {
+    "sell": 9,
+    "buy": 9,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  },
+  "Reclaimed Metal": {
+    "sell": 3,
+    "buy": 3,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  },
+  "Scrap Metal": {
+    "sell": 1,
+    "buy": 1,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  }
+}

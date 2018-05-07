@@ -3,7 +3,9 @@ const logOnOptions = {
   accountName: config.username,
   password: config.password,
   identitySecret: config.identitySecret,
-  sharedSecret: config.sharedSecret
+  sharedSecret: config.sharedSecret,
+  backpacktfToken: config.backpacktfToken,
+  backpacktfKey: config.backpacktfKey
 }
 
 const tradingbot = require('./tradingBot.js')

@@ -8,11 +8,14 @@ const tf2 = new TeamFortress2(client)
 
 const EventEmitter = require('events')
 
+const backpack = require('./backpack.js')
 const clientEventHandler = require('./eventHandlers/clientEventHandler.js')
+const toolbox = require('./toolbox.js')
 
 class tradingBot extends EventEmitter {
   constructor(logOnOptions) {
     super()
+    this.backpack = new backpack(this.logOnOptions.backpacktfToken, this.logOnOptions.backpacktfKey)
     this.client = client
     this.community = new SteamCommunity()
     this.logOnOptions = logOnOptions
@@ -22,11 +25,22 @@ class tradingBot extends EventEmitter {
       community: this.community,
       language: 'en'
     })
+    this.toolbox = toolbox
     this._clientEventHandler = new clientEventHandler(this, this.client)
   }
 
+  _craftable(item) {
+    let descriptionLength = item.descriptions.length;
+    for (i = 0; i < descriptionLength; i++) {
+      if (item.descriptions[i].value === "( Not Usable in Crafting )") {
+        return false
+      }
+    }
+    return true
+  }
+
   _startTradingCallback(offer) {
-    this.evaluateOffer(offer)
+    this.processOffer(offer)
   }
   _cacheInventory() {
     return new Promise((resolve, reject) => {
@@ -57,7 +71,7 @@ class tradingBot extends EventEmitter {
     })
   }
 
-  declineOffer(offer) {
+  declineOffer(offer, reason) {
     return new Promise((resolve, reject) => {
       offer.decline(err => {
         if (err) {
@@ -69,18 +83,20 @@ class tradingBot extends EventEmitter {
     })
   }
 
-  evaluateOffer(offer) {
+  evaluateOfferProfit(offer) {
+    let receivingFull = offer.itemsToReceive
+    let givingFull = offer.itemsToGive
     let receiving = offer.itemsToReceive.map(item => item.market_hash_name)
     let giving = offer.itemsToGive.map(item => item.market_hash_name)
-    let receivingValue = receiving.reduce((accumulator, currentValue) => {
-      if (this.prices[currentValue]) {
+    let receivingValue = receiving.reduce((accumulator, currentValue, i) => {
+      if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(receivingFull[i])) {
         return accumulator + this.prices[currentValue].buy
       } else {
         return accumulator
       }
     })
     let givingValue = giving.reduce((accumulator, currentValue) => {
-      if (this.prices[currentValue]) {
+      if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(givingFull[i])) {
         return accumulator + this.prices[currentValue].sell
       } else {
         return accumulator + 9999
@@ -132,6 +148,35 @@ class tradingBot extends EventEmitter {
     })
   }
 
+  processOffer(offer) {
+    if (this.evaluateOfferProfit(offer) > 1) {
+      if (this.evaluateStock(offer)) {
+        this.acceptOffer(offer)
+          .then(() => {
+            offer.getReceivedItems((err, items) => {
+              //should do error handling here.
+              for (let item of items) {
+                if (this.prices[item]) {
+                  if (!this.prices[item].isCurrency) {
+                    this.backpack.loadBptfInventory()
+                      .then(() => {
+                        this.backpack.createSellListing(item.id, this.prices[item].sell)
+                      })
+                  }
+                }
+              }
+            })
+          })
+      } else {
+        this.declineOffer(offer)
+        this.emit('debug', 'Rejected due to overstock.')
+      }
+    } else {
+      this.declineOffer(offer)
+      this.emit('debug', 'Rejected because trader didnt offer enough or took an item bot wasnt selling.')
+    }
+  }
+
   get prices() {
     if (require.cache[require.resolve('./prices.json')]) {
       delete require.cache[require.resolve('./prices.json')]
@@ -146,11 +191,37 @@ class tradingBot extends EventEmitter {
     }
     this.manager.on('newOffer', this._startTradingCallback)
     this.emit('debug', 'Started Trading')
+    this.backpack.startHeartbeat()
+    this.emit('debug', 'Started sending heartbeats to bptf')
+    this.backpack.startAutobump()
+    this.emit('debug', 'Started bptf auto bump')
   }
 
   stopTrading() {
     this.manager.removeListener('newOffer', this._startTradingCallback)
     this.emit('debug', 'Stopped Trading')
+  }
+
+  undercutBptf() {
+    this.backpack.getMyListings()
+      .then(listings => {
+        for (let listing of listings.listings) {
+          this.backpack.getItemListings(listing.item.name, listing.item.quality)
+            .then(listings => {
+              let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+              let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+              //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
+              let currentPricesDB = this.prices
+              if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
+                currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+              }
+              if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
+                currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+              }
+              this.toolbox.savePrices(currentPricesDB)
+            })
+        }
+      })
   }
 }
 
