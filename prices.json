@@ -21,14 +21,14 @@
     "isCurrency": true
   },
   "Hat of Cards": {
-    "sell": 21,
-    "buy": 20,
+    "sell": 20,
+    "buy": 19,
     "stock": 3,
     "craftable": true
   },
   "Flak Jack": {
-    "sell": 62,
-    "buy": 61,
+    "sell": 61,
+    "buy": 60,
     "stock": 3,
     "craftable": true
   }

@@ -173,6 +173,9 @@ class tradingBot extends EventEmitter {
               }
             })
           })
+          .catch(err => {
+            this.emit('debug', err)
+          })
       } else {
         this.declineOffer(offer)
         this.emit('debug', 'Rejected due to overstock.')
@@ -201,6 +204,7 @@ class tradingBot extends EventEmitter {
     this.emit('debug', 'Started sending heartbeats to bptf')
     this.backpack.startAutobump()
     this.emit('debug', 'Started bptf auto bump')
+    this.undercutBptf()
     this._undercutTimeout = setTimeout(this.undercutBptf.bind(this), 1000 * 60 * 15)
     this.emit('debug', 'Started bptf undercutting')
   }
@@ -215,26 +219,43 @@ class tradingBot extends EventEmitter {
   }
 
   undercutBptf() {
+    this.emit('debug', 'Attempting to undercut.')
     this.backpack.getMyListings()
-      .then(listings => {
+      .then(async listings => {
+        let currentPricesDB = this.prices
         for (let listing of listings.listings) {
-          this.backpack.getItemListings(listing.item.name, listing.item.quality)
-            .then(listings => {
-              let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-              let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-              //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
-              let currentPricesDB = this.prices
-              if (automaticBuyListings[0] < automaticSellListings[0]) {
-                if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
-                  currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
-                }
-                if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
-                  currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
-                }
-                this.toolbox.savePrices(currentPricesDB)
-              }
-            })
+          // this.backpack.getItemListings(listing.item.name, listing.item.quality)
+          //   .then(listings => {
+          //     let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+          //     let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+          //     //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
+          //     let currentPricesDB = this.prices
+          //     if (automaticBuyListings[0] < automaticSellListings[0]) {
+          //       if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
+          //         currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+          //       }
+          //       if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
+          //         currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+          //       }
+          //       this.toolbox.savePrices(currentPricesDB)
+          //     }
+          //   })
+          let listings = await this.backpack.getItemListings(listing.item.name, listing.item.quality)
+          let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+          console.log(automaticBuyListings)
+          let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+          console.log(automaticSellListings)
+          //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
+          if (automaticBuyListings[0] < automaticSellListings[0]) {
+            if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
+              currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+            }
+            if (this.backpack.refToScrap(automaticSellListings[0]) > this.prices[listing.item.name].sell) {
+              currentPricesDB[listing.item.name].sell = this.backpack.refToScrap(automaticSellListings[0])
+            }
+          }
         }
+        this.toolbox.savePrices(currentPricesDB)
       })
   }
 }
