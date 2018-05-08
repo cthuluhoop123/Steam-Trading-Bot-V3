@@ -90,7 +90,7 @@ class backpack {
     })
   }
 
-  getItemListings(item, quality) {
+  getItemListings(enforceRateLimit, item, quality) {
     return new Promise((resolve, reject) => {
       this.api.classifieds.search.v1.get({
         item_names: true,
@@ -99,10 +99,19 @@ class backpack {
         quality: quality
       })
         .then(res => {
-          return resolve({
-            buy: res.body.buy.listings,
-            sell: res.body.sell.listings
-          })
+          if (!enforceRateLimit) {
+            return resolve({
+              buy: res.body.buy.listings,
+              sell: res.body.sell.listings
+            })
+          } else {
+            setTimeout(() => {
+              return resolve({
+                buy: res.body.buy.listings,
+                sell: res.body.sell.listings
+              })
+            }, 1000 * 10)
+          }
         })
         .catch(err => {
           return reject(err)

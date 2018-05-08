@@ -240,11 +240,10 @@ class tradingBot extends EventEmitter {
           //       this.toolbox.savePrices(currentPricesDB)
           //     }
           //   })
-          let listings = await this.backpack.getItemListings(listing.item.name, listing.item.quality)
+          if (listing.intent == 0) return
+          let listings = await this.backpack.getItemListings(true, listing.item.name, listing.item.quality)
           let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-          console.log(automaticBuyListings)
           let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-          console.log(automaticSellListings)
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
           if (automaticBuyListings[0] < automaticSellListings[0]) {
             if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
