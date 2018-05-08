@@ -15,7 +15,7 @@ class backpack {
           let buyListings = listings.listings.filter(listing => listing.intent == 0)
           let listingsArray = []
           for (let listing of sellListings) {
-            let newPrice = this.tradingBot.scrapToRef(this.tradingBot.prices[listing.item.name].sell)
+            let newPrice = this.scrapToRef(this.tradingBot.prices[listing.item.name].sell)
             listingsArray.push({
               "intent": '1',
               "id": listing.item.id,
@@ -24,7 +24,7 @@ class backpack {
             })
           }
           for (let listing of buyListings) {
-            let newPrice = this.tradingBot.scrapToRef(this.tradingBot.prices[listing.item.name].buy)
+            let newPrice = this.scrapToRef(this.tradingBot.prices[listing.item.name].buy)
             listingsArray.push({
               "intent": '0',
               "item": {
@@ -39,6 +39,7 @@ class backpack {
             listings: listingsArray
           })
             .then(res => {
+              this.tradingBot.emit('debug', 'Bumped all listings and updated prices.')
               return resolve(res)
             })
         })

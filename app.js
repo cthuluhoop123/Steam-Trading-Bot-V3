@@ -8,11 +8,12 @@ const logOnOptions = {
   backpacktfKey: config.backpacktfKey
 }
 
-const tradingbot = require('./tradingBot.js')
+const tradingbot = require('./structures/tradingBot.js')
 let something = new tradingbot(logOnOptions)
 
 something.on("loggedOn", () => {
   console.log("logged on")
+  something.startTrading()
 })
 
 something.on('debug', console.log)

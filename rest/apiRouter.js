@@ -7,6 +7,7 @@ function buildRoute(baseURL, apiToken, apiKey) {
         return function (param) {
           return new Promise((resolve, reject) => {
             let route = me.route.join('/')
+            me.route = []
             request
               .get(baseURL + route)
               .query(Object.assign(param, {
@@ -15,10 +16,8 @@ function buildRoute(baseURL, apiToken, apiKey) {
               }))
               .end((err, res) => {
                 if (err) {
-                  me.route = []
                   return reject(err)
                 } else {
-                  me.route = []
                   return resolve(res)
                 }
               })
@@ -29,15 +28,19 @@ function buildRoute(baseURL, apiToken, apiKey) {
         return function (param) {
           return new Promise((resolve, reject) => {
             let route = me.route.join('/')
+            me.route = []
             request
               .post(baseURL + route)
               .send(Object.assign(param, { 
                 token: me.token,
                 key: me.key 
               }))
-              .end(res => {
-                me.route = []
-                return resolve(res)
+              .end((err, res) => {
+                if (err) {
+                  return reject(err)
+                } else {
+                  return resolve(res)
+                }
               })
           })
         }

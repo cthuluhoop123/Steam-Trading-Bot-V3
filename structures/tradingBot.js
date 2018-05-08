@@ -9,16 +9,17 @@ const tf2 = new TeamFortress2(client)
 const EventEmitter = require('events')
 
 const backpack = require('./backpack.js')
-const clientEventHandler = require('./eventHandlers/clientEventHandler.js')
+const clientEventHandler = require('../eventHandlers/clientEventHandler.js')
 const toolbox = require('./toolbox.js')
 
 class tradingBot extends EventEmitter {
   constructor(logOnOptions) {
     super()
+    this.logOnOptions = logOnOptions
+
     this.backpack = new backpack(this, this.logOnOptions.backpacktfToken, this.logOnOptions.backpacktfKey)
     this.client = client
     this.community = new SteamCommunity()
-    this.logOnOptions = logOnOptions
     this.logOnOptions.twoFactorCode = SteamTotp.generateAuthCode(this.logOnOptions.sharedSecret)
     this.manager = new TradeOfferManager({
       steam: client,
@@ -31,7 +32,7 @@ class tradingBot extends EventEmitter {
 
   _craftable(item) {
     let descriptionLength = item.descriptions.length;
-    for (i = 0; i < descriptionLength; i++) {
+    for (let i = 0; i < descriptionLength; i++) {
       if (item.descriptions[i].value === "( Not Usable in Crafting )") {
         return false
       }
@@ -95,7 +96,7 @@ class tradingBot extends EventEmitter {
         return accumulator
       }
     })
-    let givingValue = giving.reduce((accumulator, currentValue) => {
+    let givingValue = giving.reduce((accumulator, currentValue, i) => {
       if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(givingFull[i])) {
         return accumulator + this.prices[currentValue].sell
       } else {
@@ -128,6 +129,7 @@ class tradingBot extends EventEmitter {
   logOn() {
     return new Promise((resolve, reject) => {
       this.client.logOn(this.logOnOptions)
+      this.client.loggedOn = true
       this.client.on('webSession', (sessionID, cookies) => {
         this.community.setCookies(cookies)
 
@@ -141,7 +143,6 @@ class tradingBot extends EventEmitter {
           }
           this._cacheInventory()
           this.emit('debug', 'Got API key: ' + this.manager.apiKey)
-          this.client.loggedOn = true
           return resolve(true)
         })
       })
@@ -149,18 +150,23 @@ class tradingBot extends EventEmitter {
   }
 
   processOffer(offer) {
+    this.emit('debug', 'Processing trade offer')
     if (this.evaluateOfferProfit(offer) > 0) {
+      this.emit('debug', 'Trade offer gives a profit of more than 0')
       if (this.evaluateStock(offer)) {
+        this.emit('debug', 'No receiving items is not overstocked. Attempting to accept offer')
         this.acceptOffer(offer)
           .then(() => {
             offer.getReceivedItems((err, items) => {
+              this.emit('debug', 'Accepted trade offer')
               //should do error handling here.
               for (let item of items) {
-                if (this.prices[item]) {
-                  if (!this.prices[item].isCurrency) {
+                if (this.prices[item.market_hash_name]) {
+                  if (!this.prices[item.market_hash_name].isCurrency) {
                     this.backpack.loadBptfInventory()
                       .then(() => {
-                        this.backpack.createSellListing(item.id, this.prices[item].sell)
+                        this.emit('debug', 'Attempting to list the item')
+                        this.backpack.createSellListing(item.id, this.prices[item.market_hash_name].sell)
                       })
                   }
                 }
@@ -178,10 +184,10 @@ class tradingBot extends EventEmitter {
   }
 
   get prices() {
-    if (require.cache[require.resolve('./prices.json')]) {
-      delete require.cache[require.resolve('./prices.json')]
+    if (require.cache[require.resolve('../prices.json')]) {
+      delete require.cache[require.resolve('../prices.json')]
     }
-    return require('./prices.json')
+    return require('../prices.json')
   }
 
   startTrading() {
@@ -189,17 +195,23 @@ class tradingBot extends EventEmitter {
       console.log('Client must be logged on.')
       return
     }
-    this.manager.on('newOffer', this._startTradingCallback)
+    this.manager.on('newOffer', this._startTradingCallback.bind(this))
     this.emit('debug', 'Started Trading')
     this.backpack.startHeartbeat()
     this.emit('debug', 'Started sending heartbeats to bptf')
     this.backpack.startAutobump()
     this.emit('debug', 'Started bptf auto bump')
+    this._undercutTimeout = setTimeout(this.undercutBptf.bind(this), 1000 * 60 * 15)
+    this.emit('debug', 'Started bptf undercutting')
   }
 
   stopTrading() {
     this.manager.removeListener('newOffer', this._startTradingCallback)
     this.emit('debug', 'Stopped Trading')
+    clearTimeout(this._undercutTimeout)
+    this.emit('debug', 'Stopped auto undercutting')
+    clearTimeout(this._cacheInventoryTimeout)
+    this.emit('debug', 'Stopped auto inventory cache')
   }
 
   undercutBptf() {

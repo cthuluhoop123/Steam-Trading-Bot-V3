@@ -19,5 +19,17 @@
     "stock": 9999,
     "craftable": true,
     "isCurrency": true
+  },
+  "Hat of Cards": {
+    "sell": 21,
+    "buy": 20,
+    "stock": 3,
+    "craftable": true
+  },
+  "Flak Jack": {
+    "sell": 62,
+    "buy": 61,
+    "stock": 3,
+    "craftable": true
   }
 }
