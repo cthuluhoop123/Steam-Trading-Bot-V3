@@ -1,1 +1,77 @@
-{"Refined Metal":{"sell":9,"buy":9,"stock":9999,"craftable":true,"isCurrency":true},"Reclaimed Metal":{"sell":3,"buy":3,"stock":9999,"craftable":true,"isCurrency":true},"Scrap Metal":{"sell":1,"buy":1,"stock":9999,"craftable":true,"isCurrency":true},"Hat of Cards":{"sell":20,"buy":19,"stock":3,"craftable":true},"Flak Jack":{"sell":61,"buy":60,"stock":3,"craftable":true},"Elf Esteem":{"sell":21,"buy":19,"stock":3,"craftable":true},"El Caballero":{"sell":61,"buy":59,"stock":3,"craftable":true},"The Sky Captain":{"sell":12,"buy":11,"stock":3,"craftable":true},"The Toowoomba Tunic":{"sell":24,"buy":22,"stock":3,"craftable":true},"Trickster's Turnout Gear":{"sell":28,"buy":27,"stock":3,"craftable":true},"Cosa Nostra Cap":{"sell":27,"buy":24,"stock":3,"craftable":true}}
+{
+  "Refined Metal": {
+    "sell": 9,
+    "buy": 9,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  },
+  "Reclaimed Metal": {
+    "sell": 3,
+    "buy": 3,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  },
+  "Scrap Metal": {
+    "sell": 1,
+    "buy": 1,
+    "stock": 9999,
+    "craftable": true,
+    "isCurrency": true
+  },
+  "Hat of Cards": {
+    "sell": 20,
+    "buy": 19,
+    "stock": 3,
+    "craftable": true
+  },
+  "Flak Jack": {
+    "sell": 61,
+    "buy": 60,
+    "stock": 3,
+    "craftable": true
+  },
+  "Elf Esteem": {
+    "sell": 21,
+    "buy": 19,
+    "stock": 3,
+    "craftable": true
+  },
+  "El Caballero": {
+    "sell": 61,
+    "buy": 59,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Sky Captain": {
+    "sell": 12,
+    "buy": 11,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Toowoomba Tunic": {
+    "sell": 24,
+    "buy": 22,
+    "stock": 3,
+    "craftable": true
+  },
+  "Trickster's Turnout Gear": {
+    "sell": 28,
+    "buy": 27,
+    "stock": 3,
+    "craftable": true
+  },
+  "Cosa Nostra Cap": {
+    "sell": 27,
+    "buy": 24,
+    "stock": 3,
+    "craftable": true
+  },
+  "Tartan Tyrolean": {
+    "sell": 99,
+    "buy": 9,
+    "stock": 3,
+    "craftable": true
+  }
+}

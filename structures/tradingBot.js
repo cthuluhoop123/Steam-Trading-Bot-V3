@@ -89,20 +89,36 @@ class tradingBot extends EventEmitter {
     let givingFull = offer.itemsToGive
     let receiving = offer.itemsToReceive.map(item => item.market_hash_name)
     let giving = offer.itemsToGive.map(item => item.market_hash_name)
-    let receivingValue = receiving.reduce((accumulator, currentValue, i) => {
-      if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(receivingFull[i])) {
-        return accumulator + this.prices[currentValue].buy
-      } else {
-        return accumulator
-      }
-    })
-    let givingValue = giving.reduce((accumulator, currentValue, i) => {
-      if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(givingFull[i])) {
-        return accumulator + this.prices[currentValue].sell
-      } else {
-        return accumulator + 9999
-      }
-    })
+    let receivingValue = 0
+    let givingValue = 0
+    if (receiving.length == 1) {
+      receivingValue = (this.prices[receiving[0]] && this.prices[receiving[0]].craftable == this._craftable(receivingFull[0]))
+        ? this.prices[receiving[0]].buy
+        : 0
+    } else {
+      receivingValue = receiving.reduce((accumulator, currentValue, i) => {
+        if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(receivingFull[i])) {
+          return accumulator + this.prices[currentValue].buy
+        } else {
+          return accumulator
+        }
+      }, 0)
+    }
+    if (giving.length == 1) {
+      givingValue = (this.prices[giving[0]] && this.prices[giving[0]].craftable == this._craftable(givingFull[0]))
+        ? this.prices[giving[0]].sell
+        : 0
+    } else {
+      givingValue = giving.reduce((accumulator, currentValue, i) => {
+        if (this.prices[currentValue] && this.prices[currentValue].craftable == this._craftable(givingFull[i])) {
+          return accumulator + this.prices[currentValue].sell
+        } else {
+          return accumulator + 9999
+        }
+      }, 0)
+    }
+    console.log(receivingValue)
+    console.log(givingValue)
     return Number(receivingValue - givingValue)
   }
 
