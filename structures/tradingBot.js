@@ -15,7 +15,7 @@ const toolbox = require('./toolbox.js')
 class tradingBot extends EventEmitter {
   constructor(logOnOptions) {
     super()
-    this.backpack = new backpack(this.logOnOptions.backpacktfToken, this.logOnOptions.backpacktfKey)
+    this.backpack = new backpack(this, this.logOnOptions.backpacktfToken, this.logOnOptions.backpacktfKey)
     this.client = client
     this.community = new SteamCommunity()
     this.logOnOptions = logOnOptions
@@ -149,7 +149,7 @@ class tradingBot extends EventEmitter {
   }
 
   processOffer(offer) {
-    if (this.evaluateOfferProfit(offer) > 1) {
+    if (this.evaluateOfferProfit(offer) > 0) {
       if (this.evaluateStock(offer)) {
         this.acceptOffer(offer)
           .then(() => {
@@ -212,13 +212,15 @@ class tradingBot extends EventEmitter {
               let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
               //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
               let currentPricesDB = this.prices
-              if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
-                currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+              if (automaticBuyListings[0] < automaticSellListings[0]) {
+                if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
+                  currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+                }
+                if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
+                  currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+                }
+                this.toolbox.savePrices(currentPricesDB)
               }
-              if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
-                currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
-              }
-              this.toolbox.savePrices(currentPricesDB)
             })
         }
       })

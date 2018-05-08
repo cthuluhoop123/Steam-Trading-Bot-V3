@@ -2,8 +2,9 @@ const apiRouter = require('../rest/apiRouter.js')
 const request = require('superagent')
 
 class backpack {
-  constructor(apiToken, apiKey) {
+  constructor(tradingBot, apiToken, apiKey) {
     this.api = apiRouter('https://backpack.tf/api/', apiToken, apiKey)
+    this.tradingBot = tradingBot
   }
 
   bumpListings() {
@@ -14,21 +15,23 @@ class backpack {
           let buyListings = listings.listings.filter(listing => listing.intent == 0)
           let listingsArray = []
           for (let listing of sellListings) {
+            let newPrice = this.tradingBot.scrapToRef(this.tradingBot.prices[listing.item.name].sell)
             listingsArray.push({
               "intent": '1',
               "id": listing.item.id,
-              "currencies": listing.currencies,
+              "currencies": { metal: newPrice },
               "details": listing.details
             })
           }
           for (let listing of buyListings) {
+            let newPrice = this.tradingBot.scrapToRef(this.tradingBot.prices[listing.item.name].buy)
             listingsArray.push({
               "intent": '0',
               "item": {
                 "quality": listing.item.quality,
                 "item_name": listing.item.defindex
               },
-              "currencies": listing.currencies,
+              "currencies": { metal: newPrice },
               "details": listing.details
             })
           }
