@@ -1,0 +1,29 @@
+{
+  "name": "Steam-Trading-Bot-V3",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "steam-user": "^3.27.1",
+    "steam-totp": "^2.1.0",
+    "steamcommunity": "^3.36.1",
+    "steam-tradeoffer-manager": "^2.9.3",
+    "tf2": "^2.1.2",
+    "superagent": "^3.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cthuluhoop123/Steam-Trading-Bot-V3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cthuluhoop123/Steam-Trading-Bot-V3/issues"
+  },
+  "homepage": "https://github.com/cthuluhoop123/Steam-Trading-Bot-V3#readme"
+}
