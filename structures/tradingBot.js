@@ -271,25 +271,22 @@ class tradingBot extends EventEmitter {
           return arr.map(mapObj => mapObj.item.name).indexOf(obj.item.name) === pos
         })
         for (let listing of noDupllicateListings) {
-          // console.log('-----------------------------')
-          // console.log(listing)
-          // console.log('-----------------------------')
           let listings = await this.backpack.getItemListings(true, listing.item.name.replace(/The /g, ''), listing.item.quality)
           let automaticBuyListings = listings.buy.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
           let automaticSellListings = listings.sell.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
           automaticBuyListings.sort(function (a, b) { return b - a })
           automaticSellListings.sort(function (a, b) { return a - b })
-          console.log('BUY: ' + listing.item.name + ': ' + automaticBuyListings.join(', '))
-          console.log('SELL: ' + listing.item.name + ': ' + automaticSellListings.join(', '))
+          this.emit('debug', `BUY ${listing.item.name}: ${automaticBuyListings.join(', ')}`)
+          this.emit('debug', `SELL ${listing.item.name}: ${automaticSellListings.join(', ')}`)
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
           if (automaticBuyListings[0] <= automaticSellListings[0]) {
             if (this.backpack.refToScrap(automaticBuyListings[0]) != this.prices[listing.item.name].buy) {
-              console.log(`Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
+              this.emit('debug', `Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
               currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
             }
             if (this.backpack.refToScrap(automaticSellListings[0]) != this.prices[listing.item.name].sell) {
               currentPricesDB[listing.item.name].sell = this.backpack.refToScrap(automaticSellListings[0])
-              console.log(`Set the SELL price of ${listing.item.name} to ${automaticSellListings[0]} ref/${this.backpack.refToScrap(automaticSellListings[0])} scrap`)
+              this.emit('debug', `Set the SELL price of ${listing.item.name} to ${automaticSellListings[0]} ref/${this.backpack.refToScrap(automaticSellListings[0])} scrap`)
             }
           }
         }
