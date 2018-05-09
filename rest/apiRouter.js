@@ -7,7 +7,6 @@ function buildRoute(baseURL, apiToken, apiKey) {
         return function (param) {
           return new Promise((resolve, reject) => {
             let route = me.route.join('/')
-            console.log('sending request to ' + baseURL + me.route.join('/'))
             me.route = []
             request
               .get(baseURL + route)

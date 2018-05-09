@@ -110,7 +110,7 @@ class backpack {
                 buy: res.body.buy.listings,
                 sell: res.body.sell.listings
               })
-            }, 1000 * 10)
+            }, 1000 * 5)
           }
         })
         .catch(err => {
@@ -119,9 +119,11 @@ class backpack {
     })
   }
 
-  getMyListings() {
+  getMyListings(intent = null) {
     return new Promise((resolve, reject) => {
-      this.api.classifieds.listings.v1.get({ item_names: true })
+      let param = { item_names: true }
+      if (intent) param.intent = intent
+      this.api.classifieds.listings.v1.get(param)
         .then(res => {
           return resolve(res.body)
         })
@@ -145,7 +147,7 @@ class backpack {
   }
 
   refToScrap(ref) {
-    return Math.floor(Number(ref) / 0.1110943396226415)
+    return Math.round(Number(ref) / 0.1110943396226415)
   }
 
   scrapToRef(scrap) {

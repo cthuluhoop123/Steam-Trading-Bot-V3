@@ -21,38 +21,38 @@
     "isCurrency": true
   },
   "Hat of Cards": {
-    "sell": 20,
-    "buy": 19,
+    "sell": 21,
+    "buy": 20,
     "stock": 3,
     "craftable": true
   },
   "Flak Jack": {
-    "sell": 61,
-    "buy": 60,
+    "sell": 62,
+    "buy": 61,
     "stock": 3,
     "craftable": true
   },
   "Elf Esteem": {
-    "sell": 21,
-    "buy": 19,
+    "sell": 20,
+    "buy": 20,
     "stock": 3,
     "craftable": true
   },
   "El Caballero": {
     "sell": 61,
-    "buy": 59,
+    "buy": 60,
     "stock": 3,
     "craftable": true
   },
   "The Sky Captain": {
-    "sell": 12,
+    "sell": 11,
     "buy": 11,
     "stock": 3,
     "craftable": true
   },
   "The Toowoomba Tunic": {
-    "sell": 24,
-    "buy": 22,
+    "sell": 23,
+    "buy": 23,
     "stock": 3,
     "craftable": true
   },
@@ -63,14 +63,14 @@
     "craftable": true
   },
   "Cosa Nostra Cap": {
-    "sell": 27,
-    "buy": 24,
+    "sell": 26,
+    "buy": 25,
     "stock": 3,
     "craftable": true
   },
   "Tartan Tyrolean": {
-    "sell": 1,
-    "buy": 9,
+    "sell": 12,
+    "buy": 11,
     "stock": 3,
     "craftable": true
   }

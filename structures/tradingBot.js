@@ -1,4 +1,5 @@
 const SteamUser = require('steam-user')
+const SteamID = require('steamid')
 const client = new SteamUser()
 const SteamCommunity = require('steamcommunity')
 const TradeOfferManager = require('steam-tradeoffer-manager')
@@ -55,7 +56,7 @@ class tradingBot extends EventEmitter {
       this.manager.getInventoryContents(440, 2, true, (err, inventory) => {
         if (err) return reject(err)
         this._inventory = inventory
-        this._cacheInventoryTimeout = setTimeout(this._cacheInventory.bind(this), 1000 * 60 * 30)
+        this._cacheInventoryTimeout = setTimeout(this._cacheInventory.bind(this), 1000 * 60 * 10)
         this.emit('debug', 'Cached Inventory')
         this.emit('cachedInventory')
         return resolve(true)
@@ -73,6 +74,7 @@ class tradingBot extends EventEmitter {
           if (offer.state == 3) {
             offer.getReceivedItems((err, items) => {
               this.emit('debug', 'Accepted trade offer')
+              this.emit('debug', 'Updating inventory cache')
               this.backpack.loadBptfInventory()
                 .then(() => {
                   this.emit('debug', 'Loaded BPTF inventory')
@@ -186,6 +188,8 @@ class tradingBot extends EventEmitter {
       this.client.logOn(this.logOnOptions)
       this.client.loggedOn = true
       this.client.on('webSession', (sessionID, cookies) => {
+        let sid = SteamID.fromIndividualAccountID(this.client.steamID.accountid)
+        this.client.steamID64 = sid.getSteamID64()
         this.community.setCookies(cookies)
 
         this.community.on('sessionExpired', () => {
@@ -260,37 +264,32 @@ class tradingBot extends EventEmitter {
 
   undercutBptf() {
     this.emit('debug', 'Attempting to undercut.')
-    this.backpack.getMyListings()
+    this.backpack.getMyListings(0)
       .then(async listings => {
         let currentPricesDB = this.prices
-        for (let listing of listings.listings) {
-          // this.backpack.getItemListings(listing.item.name, listing.item.quality)
-          //   .then(listings => {
-          //     let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-          //     let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-          //     //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
-          //     let currentPricesDB = this.prices
-          //     if (automaticBuyListings[0] < automaticSellListings[0]) {
-          //       if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
-          //         currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
-          //       }
-          //       if (this.backpack.refToScrap(automaticSellListings) > this.prices[listing.item.name].sell) {
-          //         currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
-          //       }
-          //       this.toolbox.savePrices(currentPricesDB)
-          //     }
-          //   })
-          if (listing.intent == 0) return
-          let listings = await this.backpack.getItemListings(true, listing.item.name, listing.item.quality)
-          let automaticBuyListings = listings.buy.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
-          let automaticSellListings = listings.sell.filter(listing => listing.automatic == 1).map(listing => listing.currencies.metal)
+        let noDupllicateListings = listings.listings.filter((obj, pos, arr) => {
+          return arr.map(mapObj => mapObj.item.name).indexOf(obj.item.name) === pos
+        })
+        for (let listing of noDupllicateListings) {
+          // console.log('-----------------------------')
+          // console.log(listing)
+          // console.log('-----------------------------')
+          let listings = await this.backpack.getItemListings(true, listing.item.name.replace(/The /g, ''), listing.item.quality)
+          let automaticBuyListings = listings.buy.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
+          let automaticSellListings = listings.sell.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
+          automaticBuyListings.sort(function (a, b) { return b - a })
+          automaticSellListings.sort(function (a, b) { return a - b })
+          console.log('BUY: ' + listing.item.name + ': ' + automaticBuyListings.join(', '))
+          console.log('SELL: ' + listing.item.name + ': ' + automaticSellListings.join(', '))
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
-          if (automaticBuyListings[0] < automaticSellListings[0]) {
-            if (this.backpack.refToScrap(automaticBuyListings[0]) < this.prices[listing.item.name].buy) {
+          if (automaticBuyListings[0] <= automaticSellListings[0]) {
+            if (this.backpack.refToScrap(automaticBuyListings[0]) != this.prices[listing.item.name].buy) {
+              console.log(`Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
               currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
             }
-            if (this.backpack.refToScrap(automaticSellListings[0]) > this.prices[listing.item.name].sell) {
+            if (this.backpack.refToScrap(automaticSellListings[0]) != this.prices[listing.item.name].sell) {
               currentPricesDB[listing.item.name].sell = this.backpack.refToScrap(automaticSellListings[0])
+              console.log(`Set the SELL price of ${listing.item.name} to ${automaticSellListings[0]} ref/${this.backpack.refToScrap(automaticSellListings[0])} scrap`)
             }
           }
         }
