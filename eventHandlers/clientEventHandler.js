@@ -1,7 +1,7 @@
 class clientEventHandler {
   constructor(tradingBot, steamClient) {
-    steamClient.on('loggedOn', (details, parental) => {
-      tradingBot.emit('loggedOn', details, parental)
+    steamClient.on('loggedOnNoCache', (details, parental) => {
+      tradingBot.emit('loggedOnNoCache', details, parental)
     })
     steamClient.on('steamGuard', (domain, callback, lastCodeWrong) => {
       tradingBot.emit('steamGuard', domain, callback, lastCodeWrong)

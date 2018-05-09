@@ -134,12 +134,12 @@ class backpack {
   loadBptfInventory() {
     return new Promise((resolve, reject) => {
       request
-        .get('https://backpack.tf/profiles/76561198364117183')
+        .get('https://backpack.tf/_inventory/76561198364117183?time=&source=steam')
         .end((err, res) => {
           if (err) {
             return reject(err)
           }
-          return resolve(res.body)
+          return resolve(true)
         })
     })
   }

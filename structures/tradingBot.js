@@ -41,6 +41,13 @@ class tradingBot extends EventEmitter {
   }
 
   _startTradingCallback(offer) {
+    if (!this._inventory) {
+      this.emit('debug', 'No inventory cache. Caching...')
+      this.once('cachedInventory', () => {
+        this.processOffer(offer)
+      })
+      return
+    }
     this.processOffer(offer)
   }
   _cacheInventory() {
@@ -50,6 +57,7 @@ class tradingBot extends EventEmitter {
         this._inventory = inventory
         this._cacheInventoryTimeout = setTimeout(this._cacheInventory.bind(this), 1000 * 60 * 30)
         this.emit('debug', 'Cached Inventory')
+        this.emit('cachedInventory')
         return resolve(true)
       })
     })
@@ -60,14 +68,46 @@ class tradingBot extends EventEmitter {
       offer.accept((err, status) => {
         if (err) {
           return reject(err)
-        } else {
-          this.community.acceptConfirmationForObject(this.logOnOptions.identitySecret, offer.id, err => {
-            if (err) {
-              return reject(err)
-            }
-            return resolve(true)
-          })
         }
+        this.manager.once('receivedOfferChanged', (offer, oldState) => {
+          if (offer.state == 3) {
+            offer.getReceivedItems((err, items) => {
+              this.emit('debug', 'Accepted trade offer')
+              this.backpack.loadBptfInventory()
+                .then(() => {
+                  this.emit('debug', 'Loaded BPTF inventory')
+                  for (let item of items) {
+                    if (this.prices[item.market_hash_name]) {
+                      if (!this.prices[item.market_hash_name].isCurrency) {
+                        this.emit('debug', 'Attempting to list the item')
+                        this.backpack.createSellListing(item.id, this.prices[item.market_hash_name].sell)
+                          .then(res => {
+                            if (res.listings[item.id].created == 1) {
+                              this.emit('debug', 'Created Listing')
+                            } else {
+                              this.emit('debug', 'Error creating listing')
+                            }
+                          })
+                          .catch(err => {
+                            this.emit('debug', err)
+                          })
+                      }
+                    }
+                  }
+                })
+                .catch(err => {
+                  this.emit('debug', err)
+                })
+              //should do error handling here.
+            })
+            return resolve(true)
+          }
+        })
+        this.community.acceptConfirmationForObject(this.logOnOptions.identitySecret, offer.id, err => {
+          if (err) {
+            return reject(err)
+          }
+        })
       })
     })
   }
@@ -117,8 +157,6 @@ class tradingBot extends EventEmitter {
         }
       }, 0)
     }
-    console.log(receivingValue)
-    console.log(givingValue)
     return Number(receivingValue - givingValue)
   }
 
@@ -144,6 +182,7 @@ class tradingBot extends EventEmitter {
 
   logOn() {
     return new Promise((resolve, reject) => {
+      this.manager.on('newOffer', this._startTradingCallback.bind(this))
       this.client.logOn(this.logOnOptions)
       this.client.loggedOn = true
       this.client.on('webSession', (sessionID, cookies) => {
@@ -158,6 +197,9 @@ class tradingBot extends EventEmitter {
             return reject(err)
           }
           this._cacheInventory()
+            .then(() => {
+              this.emit("loggedOn")
+            })
           this.emit('debug', 'Got API key: ' + this.manager.apiKey)
           return resolve(true)
         })
@@ -167,28 +209,11 @@ class tradingBot extends EventEmitter {
 
   processOffer(offer) {
     this.emit('debug', 'Processing trade offer')
-    if (this.evaluateOfferProfit(offer) > 0) {
+    if (this.evaluateOfferProfit(offer) >= 0) {
       this.emit('debug', 'Trade offer gives a profit of more than 0')
       if (this.evaluateStock(offer)) {
         this.emit('debug', 'No receiving items is not overstocked. Attempting to accept offer')
         this.acceptOffer(offer)
-          .then(() => {
-            offer.getReceivedItems((err, items) => {
-              this.emit('debug', 'Accepted trade offer')
-              //should do error handling here.
-              for (let item of items) {
-                if (this.prices[item.market_hash_name]) {
-                  if (!this.prices[item.market_hash_name].isCurrency) {
-                    this.backpack.loadBptfInventory()
-                      .then(() => {
-                        this.emit('debug', 'Attempting to list the item')
-                        this.backpack.createSellListing(item.id, this.prices[item.market_hash_name].sell)
-                      })
-                  }
-                }
-              }
-            })
-          })
           .catch(err => {
             this.emit('debug', err)
           })
@@ -214,7 +239,6 @@ class tradingBot extends EventEmitter {
       console.log('Client must be logged on.')
       return
     }
-    this.manager.on('newOffer', this._startTradingCallback.bind(this))
     this.emit('debug', 'Started Trading')
     this.backpack.startHeartbeat()
     this.emit('debug', 'Started sending heartbeats to bptf')

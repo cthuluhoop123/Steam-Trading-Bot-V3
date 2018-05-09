@@ -1,17 +1,7 @@
-class something {
-  constructor() {
-    this.test = 'foo'
-  }
-
-  some() {
-    let self = this
-    return new Promise((resolve, reject) => {
-      console.log(this.test)
-      setTimeout(this.some.bind(self), 1000)
-    })
-  }
+let obj = {
+  hi: 'dd'
 }
 
-let h = new something()
-
-h.some()
+if(obj.hid && obj.hid.d) {
+  console.log('hey')
+}
