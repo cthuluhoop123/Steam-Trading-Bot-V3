@@ -169,13 +169,13 @@ class backpack {
   startAutobump() {
     this.bumpListings()
       .then(() => {
-        setTimeout(this.bumpListings.bind(this), 1000 * 60 * 31)
+        setTimeout(this.startAutobump.bind(this), 1000 * 60 * 31)
       })
   }
 
   startHeartbeat() {
     this.sendHeartbeat()
-    setTimeout(this.sendHeartbeat.bind(this), 1000 * 91)
+    setTimeout(this.startHeartbeat.bind(this), 1000 * 91)
   }
 }
 

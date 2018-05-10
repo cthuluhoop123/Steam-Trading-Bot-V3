@@ -73,5 +73,11 @@
     "buy": 11,
     "stock": 3,
     "craftable": true
+  },
+  "The Trencher's Tunic": {
+    "sell": 24,
+    "buy": 23,
+    "stock": 3,
+    "craftable": true
   }
 }

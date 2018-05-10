@@ -68,6 +68,12 @@ class tradingBot extends EventEmitter {
     return new Promise((resolve, reject) => {
       offer.accept((err, status) => {
         if (err) {
+          if (err.message == 'Not Logged In') {
+            this.once('managerCookies', () => {
+              this.acceptOffer(offer)
+            })
+            return
+          }
           return reject(err)
         }
         this.manager.once('receivedOfferChanged', (offer, oldState) => {
@@ -98,6 +104,7 @@ class tradingBot extends EventEmitter {
                   }
                 })
                 .catch(err => {
+                  this.emit('debug', 'Error loading my bptf Inventory...')
                   this.emit('debug', err)
                 })
               //should do error handling here.
@@ -187,12 +194,13 @@ class tradingBot extends EventEmitter {
       this.manager.on('newOffer', this._startTradingCallback.bind(this))
       this.client.logOn(this.logOnOptions)
       this.client.loggedOn = true
-      this.client.on('webSession', (sessionID, cookies) => {
+      this.client.once('webSession', (sessionID, cookies) => {
         let sid = SteamID.fromIndividualAccountID(this.client.steamID.accountid)
         this.client.steamID64 = sid.getSteamID64()
         this.community.setCookies(cookies)
 
         this.community.on('sessionExpired', () => {
+          this.emit('debug', 'web session expired')
           this.client.webLogOn()
         })
 
@@ -200,9 +208,14 @@ class tradingBot extends EventEmitter {
           if (err) {
             return reject(err)
           }
+          this.emit('managerCookies')
           this._cacheInventory()
             .then(() => {
               this.emit("loggedOn")
+            })
+            .catch((err) => {
+              this.emit('debug', 'Error Caching Inventory...')
+              this.emit('debug', err)
             })
           this.emit('debug', 'Got API key: ' + this.manager.apiKey)
           return resolve(true)
@@ -219,6 +232,12 @@ class tradingBot extends EventEmitter {
         this.emit('debug', 'No receiving items is not overstocked. Attempting to accept offer')
         this.acceptOffer(offer)
           .catch(err => {
+            if (err.message == "Not Logged In") {
+              this.once('managerCookies', () => {
+                this.processOffer(offer)
+                return
+              })
+            }
             this.emit('debug', err)
           })
       } else {
@@ -249,7 +268,6 @@ class tradingBot extends EventEmitter {
     this.backpack.startAutobump()
     this.emit('debug', 'Started bptf auto bump')
     this.undercutBptf()
-    this._undercutTimeout = setTimeout(this.undercutBptf.bind(this), 1000 * 60 * 15)
     this.emit('debug', 'Started bptf undercutting')
   }
 
@@ -281,16 +299,23 @@ class tradingBot extends EventEmitter {
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
           if (automaticBuyListings[0] <= automaticSellListings[0]) {
             if (this.backpack.refToScrap(automaticBuyListings[0]) != this.prices[listing.item.name].buy) {
-              this.emit('debug', `Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
+              if (!currentPricesDB[listing.item.name]) continue
               currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
+              this.emit('debug', `Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
             }
             if (this.backpack.refToScrap(automaticSellListings[0]) != this.prices[listing.item.name].sell) {
+              if (!currentPricesDB[listing.item.name]) continue
               currentPricesDB[listing.item.name].sell = this.backpack.refToScrap(automaticSellListings[0])
               this.emit('debug', `Set the SELL price of ${listing.item.name} to ${automaticSellListings[0]} ref/${this.backpack.refToScrap(automaticSellListings[0])} scrap`)
             }
           }
         }
         this.toolbox.savePrices(currentPricesDB)
+        this._undercutTimeout = setTimeout(this.undercutBptf.bind(this), 1000 * 60 * 15)
+      })
+      .catch(err => {
+        this.emit('debug', 'Error getting my bptf listings')
+        this.emit(err)
       })
   }
 }
