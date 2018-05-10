@@ -194,7 +194,7 @@ class tradingBot extends EventEmitter {
       this.manager.on('newOffer', this._startTradingCallback.bind(this))
       this.client.logOn(this.logOnOptions)
       this.client.loggedOn = true
-      this.client.once('webSession', (sessionID, cookies) => {
+      this.client.on('webSession', (sessionID, cookies) => {
         let sid = SteamID.fromIndividualAccountID(this.client.steamID.accountid)
         this.client.steamID64 = sid.getSteamID64()
         this.community.setCookies(cookies)
