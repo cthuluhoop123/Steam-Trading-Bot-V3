@@ -11,6 +11,7 @@ const EventEmitter = require('events')
 
 const backpack = require('./backpack.js')
 const clientEventHandler = require('../eventHandlers/clientEventHandler.js')
+const PushBullet = require('./pushbullet.js')
 const toolbox = require('./toolbox.js')
 
 class tradingBot extends EventEmitter {
@@ -27,6 +28,7 @@ class tradingBot extends EventEmitter {
       community: this.community,
       language: 'en'
     })
+    this.pushBullet = new PushBullet(this.logOnOptions.pushBulletToken, this.logOnOptions.pushBulletEmail)
     this.toolbox = toolbox
     this._clientEventHandler = new clientEventHandler(this, this.client)
   }
@@ -78,6 +80,7 @@ class tradingBot extends EventEmitter {
         }
         this.manager.once('receivedOfferChanged', (offer, oldState) => {
           if (offer.state == 3) {
+            pushBullet.note('Trade Offer Accepted:', `Giving: \n${offer.itemsToGive.map(item => item.market_hash_name).join('\n')} \nReceiving: \n${offer.itemsToReceive.map(item => item.market_hash_name).join('\n')}`)
             offer.getReceivedItems((err, items) => {
               this.emit('debug', 'Accepted trade offer')
               this.emit('debug', 'Updating inventory cache')
@@ -88,7 +91,7 @@ class tradingBot extends EventEmitter {
                     if (this.prices[item.market_hash_name]) {
                       if (!this.prices[item.market_hash_name].isCurrency) {
                         this.emit('debug', 'Attempting to list the item')
-                        this.backpack.createSellListing(item.id, this.prices[item.market_hash_name].sell)
+                        this.backpack.createSellListing(item.id, this.backpack.scrapToRef(this.prices[item.market_hash_name].sell))
                           .then(res => {
                             if (res.listings[item.id].created == 1) {
                               this.emit('debug', 'Created Listing')
@@ -294,8 +297,6 @@ class tradingBot extends EventEmitter {
           let automaticSellListings = listings.sell.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
           automaticBuyListings.sort(function (a, b) { return b - a })
           automaticSellListings.sort(function (a, b) { return a - b })
-          this.emit('debug', `BUY ${listing.item.name}: ${automaticBuyListings.join(', ')}`)
-          this.emit('debug', `SELL ${listing.item.name}: ${automaticSellListings.join(', ')}`)
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
           if (automaticBuyListings[0] <= automaticSellListings[0]) {
             if (this.backpack.refToScrap(automaticBuyListings[0]) != this.prices[listing.item.name].buy) {

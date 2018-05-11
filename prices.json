@@ -39,20 +39,20 @@
     "craftable": true
   },
   "El Caballero": {
-    "sell": 61,
-    "buy": 60,
+    "sell": 66,
+    "buy": 65,
     "stock": 3,
     "craftable": true
   },
   "The Sky Captain": {
-    "sell": 11,
+    "sell": 12,
     "buy": 11,
     "stock": 3,
     "craftable": true
   },
   "The Toowoomba Tunic": {
     "sell": 23,
-    "buy": 23,
+    "buy": 22,
     "stock": 3,
     "craftable": true
   },
@@ -70,13 +70,49 @@
   },
   "Tartan Tyrolean": {
     "sell": 12,
-    "buy": 11,
+    "buy": 10,
     "stock": 3,
     "craftable": true
   },
   "The Trencher's Tunic": {
-    "sell": 24,
-    "buy": 23,
+    "sell": 25,
+    "buy": 24,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Paisley Pro": {
+    "sell": 11,
+    "buy": 10,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Compatriot": {
+    "sell": 21,
+    "buy": 20,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Bigg Mann on Campus": {
+    "sell": 19,
+    "buy": 18,
+    "stock": 3,
+    "craftable": true
+  },
+  "Cadet Visor": {
+    "sell": 25,
+    "buy": 24,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Tuxxy": {
+    "sell": 12,
+    "buy": 11,
+    "stock": 3,
+    "craftable": true
+  },
+  "The Fast Learner": {
+    "sell": 14,
+    "buy": 13,
     "stock": 3,
     "craftable": true
   }

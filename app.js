@@ -5,7 +5,9 @@ const logOnOptions = {
   identitySecret: config.identitySecret,
   sharedSecret: config.sharedSecret,
   backpacktfToken: config.backpacktfToken,
-  backpacktfKey: config.backpacktfKey
+  backpacktfKey: config.backpacktfKey,
+  pushBulletToken: config.pushBulletToken,
+  pushBulletEmail: config.pushBulletEmail
 }
 
 const tradingbot = require('./structures/tradingBot.js')
