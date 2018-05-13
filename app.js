@@ -15,6 +15,7 @@ let something = new tradingbot(logOnOptions)
 
 something.on("loggedOn", () => {
   console.log("logged on")
+  something.client.setPersona(1)
   something.startTrading()
 })
 

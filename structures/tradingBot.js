@@ -70,17 +70,11 @@ class tradingBot extends EventEmitter {
     return new Promise((resolve, reject) => {
       offer.accept((err, status) => {
         if (err) {
-          if (err.message == 'Not Logged In') {
-            this.once('managerCookies', () => {
-              this.acceptOffer(offer)
-            })
-            return
-          }
           return reject(err)
         }
         this.manager.once('receivedOfferChanged', (offer, oldState) => {
           if (offer.state == 3) {
-            pushBullet.note('Trade Offer Accepted:', `Giving: \n${offer.itemsToGive.map(item => item.market_hash_name).join('\n')} \nReceiving: \n${offer.itemsToReceive.map(item => item.market_hash_name).join('\n')}`)
+            this.pushBullet.note('Trade Offer Accepted:', `Giving: \n${offer.itemsToGive.map(item => item.market_hash_name).join('\n')} \nReceiving: \n${offer.itemsToReceive.map(item => item.market_hash_name).join('\n')}`)
             offer.getReceivedItems((err, items) => {
               this.emit('debug', 'Accepted trade offer')
               this.emit('debug', 'Updating inventory cache')
@@ -202,7 +196,7 @@ class tradingBot extends EventEmitter {
         this.client.steamID64 = sid.getSteamID64()
         this.community.setCookies(cookies)
 
-        this.community.on('sessionExpired', () => {
+        this.community.once('sessionExpired', () => {
           this.emit('debug', 'web session expired')
           this.client.webLogOn()
         })
@@ -292,6 +286,7 @@ class tradingBot extends EventEmitter {
           return arr.map(mapObj => mapObj.item.name).indexOf(obj.item.name) === pos
         })
         for (let listing of noDupllicateListings) {
+          if (!currentPricesDB[listing.item.name]) continue
           let listings = await this.backpack.getItemListings(true, listing.item.name.replace(/The /g, ''), listing.item.quality)
           let automaticBuyListings = listings.buy.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
           let automaticSellListings = listings.sell.filter(newListing => newListing.automatic == 1 && newListing.steamid != this.client.steamID64 && newListing.item.name == listing.item.name).map(listing => listing.currencies.metal)
@@ -299,24 +294,23 @@ class tradingBot extends EventEmitter {
           automaticSellListings.sort(function (a, b) { return a - b })
           //undercutting starts here. ideally, undercut to sell for a scrap higher than lowest buyer
           if (automaticBuyListings[0] <= automaticSellListings[0]) {
-            if (this.backpack.refToScrap(automaticBuyListings[0]) != this.prices[listing.item.name].buy) {
-              if (!currentPricesDB[listing.item.name]) continue
+            if (this.backpack.refToScrap(automaticBuyListings[0]) != currentPricesDB[listing.item.name].buy) {
               currentPricesDB[listing.item.name].buy = this.backpack.refToScrap(automaticBuyListings[0])
               this.emit('debug', `Set the BUY price of ${listing.item.name} to ${automaticBuyListings[0]} ref/${this.backpack.refToScrap(automaticBuyListings[0])} scrap`)
             }
-            if (this.backpack.refToScrap(automaticSellListings[0]) != this.prices[listing.item.name].sell) {
-              if (!currentPricesDB[listing.item.name]) continue
+            if (this.backpack.refToScrap(automaticSellListings[0]) != currentPricesDB[listing.item.name].sell) {
               currentPricesDB[listing.item.name].sell = this.backpack.refToScrap(automaticSellListings[0])
               this.emit('debug', `Set the SELL price of ${listing.item.name} to ${automaticSellListings[0]} ref/${this.backpack.refToScrap(automaticSellListings[0])} scrap`)
             }
           }
         }
         this.toolbox.savePrices(currentPricesDB)
+        this.emit('debug', 'Undercutting Finished.')
         this._undercutTimeout = setTimeout(this.undercutBptf.bind(this), 1000 * 60 * 15)
       })
       .catch(err => {
         this.emit('debug', 'Error getting my bptf listings')
-        this.emit(err)
+        this.emit('debug', err)
       })
   }
 }
